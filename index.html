@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MP3 Player</title>
+    <link rel="manifest" href="manifest.json">
+    <title>LISTA DE COMPRAS</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,60 +13,216 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
+            background-color: #000000;
         }
 
         .container {
+            background-color: #1C1C1C;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 400px;
+        }
+
+        h1 {
+            margin: 0 0 20px;
             text-align: center;
+            color: #ffffff;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
 
         button {
-            padding: 10px 20px;
-            font-size: 16px;
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
             cursor: pointer;
         }
 
+        button:hover {
+            background-color: #218838;
+        }
+
         ul {
-            list-style-type: none;
+            list-style: none;
             padding: 0;
+            text-align: center;
         }
 
         li {
-            margin: 10px 0;
+            background-color: #e9ecef;
             padding: 10px;
-            background-color: #fff;
-            border: 1px solid #ddd;
+            margin-bottom: 10px;
             border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        li.completed .todo-text {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+
+        li:last-child {
+            margin-bottom: 0;
+        }
+
+        .edit-button, .delete-button, .complete-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            padding: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .edit-button:hover {
+            background-color: #0056b3;
+        }
+
+        .delete-button {
+            background-color: #dc3545;
+        }
+
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+
+        .complete-button {
+            background-color: #28a745;
+        }
+
+        .complete-button:hover {
+            background-color: #218838;
+        }
+
+        .todo-text {
+            flex-grow: 1;
+            text-align: left;
+            margin-left: 10px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>MP3 Player</h1>
-        <button id="selectFolderBtn">Selecionar Pasta de Músicas</button>
-        <ul id="folderList"></ul>
+        <h1>LISTA DE COMPRAS</h1>
+        <input type="text" id="todo-input" placeholder="Compras">
+        <button id="add-button">ADICIONAR</button>
+        <ul id="todo-list"></ul>
     </div>
     <script>
-        document.getElementById('selectFolderBtn').addEventListener('click', async () => {
-            try {
-                // Solicitar ao usuário para selecionar uma pasta
-                const directoryHandle = await window.showDirectoryPicker();
-                
-                // Exibir as pastas e arquivos dentro da pasta selecionada
-                const ul = document.getElementById('folderList');
-                ul.innerHTML = ''; // Limpar a lista anterior
+        document.addEventListener('DOMContentLoaded', loadTodos);
 
-                for await (const entry of directoryHandle.values()) {
-                    if (entry.kind === 'directory') {
-                        const li = document.createElement('li');
-                        li.textContent = entry.name;
-                        ul.appendChild(li);
-                    }
-                }
-            } catch (error) {
-                console.error('Erro ao acessar a pasta: ', error);
+        document.getElementById('add-button').addEventListener('click', function() {
+            const todoInput = document.getElementById('todo-input');
+            const todoText = todoInput.value.trim();
+            
+            if (todoText !== '') {
+                addTodo(todoText);
+                saveTodoInLocalStorage(todoText);
+                todoInput.value = '';
             }
         });
+
+        function addTodo(text, completed = false) {
+            const todoList = document.getElementById('todo-list');
+            
+            const listItem = document.createElement('li');
+            if (completed) listItem.classList.add('completed');
+            
+            const todoText = document.createElement('span');
+            todoText.textContent = text;
+            todoText.className = 'todo-text';
+            listItem.appendChild(todoText);
+
+            const actionButtons = document.createElement('div');
+            actionButtons.className = 'action-buttons';
+
+            const completeButton = document.createElement('button');
+            completeButton.textContent = '✔';
+            completeButton.className = 'complete-button';
+            completeButton.addEventListener('click', function() {
+                listItem.classList.toggle('completed');
+                updateTodoInLocalStorage(text, listItem.classList.contains('completed'));
+            });
+
+            const editButton = document.createElement('button');
+            editButton.textContent = '✎';
+            editButton.className = 'edit-button';
+            editButton.addEventListener('click', function() {
+                const newText = prompt('Edit your item:', text);
+                if (newText && newText.trim() !== '') {
+                    updateTodoInLocalStorage(text, false, newText);
+                    todoText.textContent = newText;
+                }
+            });
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'X';
+            deleteButton.className = 'delete-button';
+            deleteButton.addEventListener('click', function() {
+                todoList.removeChild(listItem);
+                removeTodoFromLocalStorage(text);
+            });
+
+            actionButtons.appendChild(completeButton);
+            actionButtons.appendChild(editButton);
+            actionButtons.appendChild(deleteButton);
+            listItem.appendChild(actionButtons);
+            todoList.appendChild(listItem);
+        }
+
+        function saveTodoInLocalStorage(todo, completed = false) {
+            let todos = JSON.parse(localStorage.getItem('todos')) || [];
+            todos.push({ text: todo, completed });
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
+
+        function loadTodos() {
+            let todos = JSON.parse(localStorage.getItem('todos')) || [];
+            todos.forEach(todo => addTodo(todo.text, todo.completed));
+        }
+
+        function updateTodoInLocalStorage(oldText, completed, newText) {
+            let todos = JSON.parse(localStorage.getItem('todos')) || [];
+            todos = todos.map(todo => {
+                if (todo.text === oldText) {
+                    todo.text = newText || oldText;
+                    todo.completed = completed;
+                }
+                return todo;
+            });
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
+
+        function removeTodoFromLocalStorage(todo) {
+            let todos = JSON.parse(localStorage.getItem('todos')) || [];
+            todos = todos.filter(t => t.text !== todo);
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
     </script>
 </body>
 </html>
