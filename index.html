@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-bt">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" href="https://i.ibb.co/pZyJNtS/Background-Eraser-20240702-141849358.png">
-    <title>LISTA DE COMPRAS</title>
+    <title>MP3 Player</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,153 +12,60 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #000000;
+            background-color: #f0f0f0;
         }
 
         .container {
-            background-color: #1C1C1C;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 300px;
-        }
-
-        h1 {
-            margin: 0 0 20px;
             text-align: center;
-            color: #ffffff;
-        }
-
-        input[type="text"] {
-            width: calc(100% - 22px);
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
         }
 
         button {
-            width: 100%;
-            padding: 10px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
             cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #218838;
         }
 
         ul {
-            list-style: none;
+            list-style-type: none;
             padding: 0;
-            text-align: center;
         }
 
         li {
-            background-color: #e9ecef;
+            margin: 10px 0;
             padding: 10px;
-            margin-bottom: 10px;
+            background-color: #fff;
+            border: 1px solid #ddd;
             border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-
-        li:last-child {
-            margin-bottom: 0;
-        }
-
-        .delete-button {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            padding: 5px;
-            cursor: pointer;
-            position: absolute;
-            right: 10px;
-            font-size: 12px;
-            width: 25px;
-            height: 25px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .delete-button:hover {
-            background-color: #c82333;
-        }
-
-        .todo-text {
-            flex-grow: 1;
-            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>LISTA DE COMPRAS</h1>
-        <input type="text" id="todo-input" placeholder="Compras">
-        <button id="add-button">ADICIONAR</button>
-        <ul id="todo-list"></ul>
+        <h1>MP3 Player</h1>
+        <button id="selectFolderBtn">Selecionar Pasta de Músicas</button>
+        <ul id="folderList"></ul>
     </div>
     <script>
-        document.addEventListener('DOMContentLoaded', loadTodos);
+        document.getElementById('selectFolderBtn').addEventListener('click', async () => {
+            try {
+                // Solicitar ao usuário para selecionar uma pasta
+                const directoryHandle = await window.showDirectoryPicker();
+                
+                // Exibir as pastas e arquivos dentro da pasta selecionada
+                const ul = document.getElementById('folderList');
+                ul.innerHTML = ''; // Limpar a lista anterior
 
-        document.getElementById('add-button').addEventListener('click', function() {
-            const todoInput = document.getElementById('todo-input');
-            const todoText = todoInput.value.trim();
-            
-            if (todoText !== '') {
-                addTodo(todoText);
-                saveTodoInLocalStorage(todoText);
-                todoInput.value = '';
+                for await (const entry of directoryHandle.values()) {
+                    if (entry.kind === 'directory') {
+                        const li = document.createElement('li');
+                        li.textContent = entry.name;
+                        ul.appendChild(li);
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao acessar a pasta: ', error);
             }
         });
-
-        function addTodo(text) {
-            const todoList = document.getElementById('todo-list');
-            
-            const listItem = document.createElement('li');
-            
-            const todoText = document.createElement('span');
-            todoText.textContent = text;
-            todoText.className = 'todo-text';
-            listItem.appendChild(todoText);
-
-            const deleteButton = document.createElement('button');
-            deleteButton.textContent = 'X';
-            deleteButton.className = 'delete-button';
-            deleteButton.addEventListener('click', function() {
-                todoList.removeChild(listItem);
-                removeTodoFromLocalStorage(text);
-            });
-            
-            listItem.appendChild(deleteButton);
-            todoList.appendChild(listItem);
-        }
-
-        function saveTodoInLocalStorage(todo) {
-            let todos = JSON.parse(localStorage.getItem('todos')) || [];
-            todos.push(todo);
-            localStorage.setItem('todos', JSON.stringify(todos));
-        }
-
-        function loadTodos() {
-            let todos = JSON.parse(localStorage.getItem('todos')) || [];
-            todos.forEach(todo => addTodo(todo));
-        }
-
-        function removeTodoFromLocalStorage(todo) {
-            let todos = JSON.parse(localStorage.getItem('todos')) || [];
-            todos = todos.filter(t => t !== todo);
-            localStorage.setItem('todos', JSON.stringify(todos));
-        }
     </script>
 </body>
 </html>
